@@ -1,6 +1,6 @@
 TARGET		=	mysh
 
-CC			=	cc
+CC       	=	cc
 CFLAGS		=	-std=c99 -Wall -Werror -pedantic
 
 SRC_DIR		=	src
