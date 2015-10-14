@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #if defined(__linux__)
     extern	char	*strdup(const char *str);

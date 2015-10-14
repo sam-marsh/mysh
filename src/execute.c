@@ -7,6 +7,8 @@
    Date:                TODO		        
  */
 
+#define READ_END    0
+#define WRITE_END   1
 extern char **environ;
 
 // -------------------------------------------------------------------
@@ -65,7 +67,8 @@ int execute_cmdtree(CMDTREE *t)
           }
         case N_PIPE:
           {
-            printf("pipe\n");
+            print_cmdtree0(t->left);
+            print_cmdtree0(t->right);
             break;
           }
         case N_SUBSHELL:
@@ -119,6 +122,15 @@ int execute_cmdtree(CMDTREE *t)
             }
             else
             {
+              bool time = strcmp(t->argv[0], "time") == 0;
+              char **argv = t->argv;
+              int argc = t->argc;
+              if (time)
+              {
+                ++argv;
+                --argc;
+              }
+
               int pid;
               switch (pid = fork())
               {
@@ -128,9 +140,10 @@ int execute_cmdtree(CMDTREE *t)
                   break;
                 case 0:
                   {
-                    if (strchr(t->argv[0], '/'))
+                    char *file_path;
+                    if (strchr(argv[0], '/'))
                     {
-                      execve(t->argv[0], t->argv, environ);
+                      file_path = strdup(argv[0]);
                     }
                     else 
                     {
@@ -138,20 +151,41 @@ int execute_cmdtree(CMDTREE *t)
                       while (token != NULL)
                       {
                         char full_path[MAXPATHLEN];
-                        sprintf(full_path, "%s/%s", token, t->argv[0]);
+                        sprintf(full_path, "%s/%s", token, argv[0]);
                         if (access(full_path, F_OK) != -1)
                         {
-                          execve(full_path, t->argv, environ);
+                          file_path = strdup(full_path);
                           break;
                         }
                         token = strtok(NULL, ":");
                       }
                     }
+                    execve(file_path, argv, environ);
                     exit(EXIT_FAILURE);
                     break;
                   }
                 default:
-                  wait(&exitstatus);
+                  if (time)
+                  {
+                    struct timeval st_start;
+                    struct timeval st_end;
+                    int start = gettimeofday(&st_start, NULL);
+                    if (start == -1)
+                    {
+                      //error TODO
+                    }
+                    wait(&exitstatus);
+                    int end = gettimeofday(&st_end, NULL);
+                    if (end == -1)
+                    {
+                      //error TODO
+                    }
+                    fprintf(stderr, "%limsec\n", (st_end.tv_usec - st_start.tv_usec) / 1000);
+                  }
+                  else
+                  {
+                    wait(&exitstatus);
+                  }
                   break;
               }
             }
