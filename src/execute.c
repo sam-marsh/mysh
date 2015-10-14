@@ -73,7 +73,20 @@ int execute_cmdtree(CMDTREE *t)
           }
         case N_SUBSHELL:
           {
-            printf("subshell\n");
+            int pid;
+            switch (pid = fork())
+            {
+              case -1:
+                perror("fork()");
+                exitstatus = EXIT_FAILURE;
+                break;
+              case 0:
+                execute_cmdtree(t->left);
+                break;
+              default:
+                wait(&exitstatus);
+                break;
+            }
             break;
           }
         case N_COMMAND:
