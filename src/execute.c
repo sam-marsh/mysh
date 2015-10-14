@@ -121,8 +121,31 @@ int execute_subshell(CMDTREE *t)
       perror("fork()");
       return EXIT_FAILURE;
     case 0:
-      execute_cmdtree(t->left);
-      break;
+      {
+        if (t->infile != NULL)
+        {
+          FILE *fp = fopen(t->infile, "r");
+          if (fp == NULL) 
+          { 
+            //error (TODO) 
+          }
+          dup2(fileno(fp), STDIN_FILENO);
+          fclose(fp);
+        }
+        if (t->outfile != NULL)
+        {
+          FILE *fp = fopen(t->outfile, t->append ? "a" : "w");
+          if (fp == NULL)
+          {
+            //error (TODO)
+          }
+          dup2(fileno(fp), STDOUT_FILENO);
+          fclose(fp);
+        }
+        //TODO - should this be exiting??
+        exit(execute_cmdtree(t->left));
+        break;
+      }
     default:
       wait(&exit_status);
       break;
