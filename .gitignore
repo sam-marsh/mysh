@@ -3,6 +3,7 @@ bin/
 
 # Vim
 *.swp
+*~
 
 # Object files
 *.o
