@@ -7,9 +7,9 @@ SRC_DIR		=	src
 OBJ_DIR		=	obj
 BIN_DIR		=	bin
 
-SOURCES		:= 	$(wildcard $(SRC_DIR)/*.c)
-HEADERS		:= 	$(wildcard $(SRC_DIR)/*.h)
-OBJECTS		:= 	$(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+SOURCES		= 	$(wildcard $(SRC_DIR)/*.c)
+HEADERS		= 	$(wildcard $(SRC_DIR)/*.h)
+OBJECTS		= 	$(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 $(BIN_DIR)/$(TARGET) : $(OBJECTS)
 	@mkdir -p $(BIN_DIR)

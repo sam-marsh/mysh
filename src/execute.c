@@ -199,6 +199,7 @@ int execute_command(CMDTREE *t)
   return -1;
 }
 
+extern int main(int argc, char *argv[]);
 
 // -------------------------------------------------------------------
 
@@ -295,7 +296,7 @@ int execute_cmdtree(CMDTREE *t)
               break;
             case 0:
               {
-                char *file_path;
+                char *file_path = NULL;
                 if (strchr(argv[0], '/'))
                 {
                   file_path = strdup(argv[0]);
@@ -343,23 +344,24 @@ int execute_cmdtree(CMDTREE *t)
                     //error (TODO)
                   }
 
-                  int pid;
-
-                  switch (pid = fork())
+                  switch (fork())
                   {
                     case -1:
                       perror("fork()");
                       exitstatus = EXIT_FAILURE;
                       break;
                     case 0:
-                      dup2(fileno(fp), STDIN_FILENO);
-                      break;
+                      {
+                        dup2(fileno(fp), STDIN_FILENO);
+                        fclose(fp);
+                        exit(main(1, &argv0));
+                        break;
+                      }
                     default:
+                      fclose(fp);
                       wait(&exitstatus);
                       break;
                   }
-
-                  fclose(fp);
                 }
                 break;
               }
@@ -379,7 +381,7 @@ int execute_cmdtree(CMDTREE *t)
                 {
                   //error TODO
                 }
-                fprintf(stderr, "%limsec\n", (st_end.tv_usec - st_start.tv_usec) / 1000);
+                fprintf(stderr, "%imsec\n", (int) (st_end.tv_usec - st_start.tv_usec) / 1000);
               }
               else
               {
