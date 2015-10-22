@@ -1,6 +1,16 @@
 #include "mysh.h"
 
-int execute_command(CMDTREE *command, char *path, char **argv)
+/**
+ * Attempts to execute an external program from a file in a child process.
+ * If invoking the process fails, the contents of the file are interpreted as
+ * commands (a shell script).
+ *
+ * @param  command the command tree, with root node of type N_COMMAND
+ * @param  path    the full path to the file
+ * @param  argv    the arguments to be passed to the program
+ * @return         the exit status of the program
+ */
+int execute_external_command(CMDTREE *command, char *path, char **argv)
 {
   switch (fork())
   {
@@ -8,15 +18,20 @@ int execute_command(CMDTREE *command, char *path, char **argv)
       MYSH_PERROR("execute_command");
       return EXIT_FAILURE;
     case FORK_CHILD:
+      //check and enable I/O redirection if required
       set_redirection(command);
+      //attempt to invoke the program
       execv(path, argv);
-      //failed to execute for whatever reason - try script
+      //failed to execute for whatever reason - try interpreting as script
       execute_script(path);
+      //if we reach here, it has failed to execute as a program and a script
+      //probably a permissions issue
       fprintf(stderr, "%s: %s: failed to execute as program or shell script\n", argv0, argv[0]);
       exit(EXIT_FAILURE);
       break;
     default:
     {
+      //in the parent process, just wait for the child to finish execution
       int exit_status;
       while (wait(&exit_status) > 0);
       exit_status = WEXITSTATUS(exit_status);
@@ -88,7 +103,7 @@ int direct_command(CMDTREE *t)
     }
     else
     {
-      int result = execute_command(t, file_path, c_argv);
+      int result = execute_external_command(t, file_path, c_argv);
       free(file_path);
       return result;
     }

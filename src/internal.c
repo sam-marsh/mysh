@@ -64,7 +64,7 @@ int set_variable(char *ident, char *val)
 
   //if we reach here, there are no internal variables matching the given
   //identifier
-  fprintf(stderr, "unrecognized variable: '%s'\n", ident);
+  fprintf(stderr, "unrecognised variable: '%s'\n", ident);
   return EXIT_FAILURE;
 }
 

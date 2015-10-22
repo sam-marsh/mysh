@@ -15,7 +15,7 @@ int execute_background(CMDTREE *t)
   {
     case FORK_FAILURE:
       //failed to fork
-      perror("fork()");
+      MYSH_PERROR("execute_background");
       return EXIT_FAILURE;
     case FORK_CHILD:
     {
@@ -35,6 +35,7 @@ int execute_background(CMDTREE *t)
       {
         return execute_cmdtree(t->right);
       }
+      return EXIT_SUCCESS;
   }
 
   fprintf(stderr, "%s: internal error: failed to exit child process\n", argv0);

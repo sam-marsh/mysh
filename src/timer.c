@@ -42,7 +42,7 @@ int time_command(CMDTREE *command, char *path, char **argv, int *exit_status)
   }
 
   //execute the command, storing the exit status in the variable passed to the function
-  *exit_status = execute_command(command, path, argv);
+  *exit_status = execute_external_command(command, path, argv);
 
   if ((err = gettimeofday(&st_end, NULL)) == -1)
   {

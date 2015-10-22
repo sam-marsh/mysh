@@ -9,8 +9,19 @@
 int execute_semicolon(CMDTREE *t)
 {
   //execute in order, no matter the result of the left side
-  execute_cmdtree(t->left);
-  return execute_cmdtree(t->right);
+  int exit_status = EXIT_SUCCESS;
+
+  if (t->left != NULL)
+  {
+    execute_cmdtree(t->left);
+  }
+
+  if (t->right != NULL)
+  {
+    exit_status = execute_cmdtree(t->right);
+  }
+
+  return exit_status;
 }
 
 /**
@@ -26,12 +37,17 @@ int execute_semicolon(CMDTREE *t)
 int execute_or(CMDTREE *t)
 {
   //always execute left hand side
-  int exit_status = execute_cmdtree(t->left);
+  int exit_status = EXIT_SUCCESS;
+
+  if (t->left != NULL)
+  {
+    exit_status = execute_cmdtree(t->left);
+  }
 
   //short circuit upon failure
-  if (exit_status != EXIT_SUCCESS)
+  if (exit_status != EXIT_SUCCESS && t->right != NULL)
   {
-    return execute_cmdtree(t->right);
+    exit_status = execute_cmdtree(t->right);
   }
 
   return exit_status;
@@ -50,12 +66,17 @@ int execute_or(CMDTREE *t)
 int execute_and(CMDTREE *t)
 {
   //always execute left hand side
-  int exit_status = execute_cmdtree(t->left);
+  int exit_status = EXIT_SUCCESS;
+
+  if (t->left != NULL)
+  {
+    exit_status = execute_cmdtree(t->left);
+  }
 
   //short circuit upon success
-  if (exit_status == EXIT_SUCCESS)
+  if (exit_status == EXIT_SUCCESS && t->right != NULL)
   {
-    return execute_cmdtree(t->right);
+    exit_status = execute_cmdtree(t->right);
   }
 
   return exit_status;

@@ -87,7 +87,7 @@ extern void set_redirection(CMDTREE *);
 extern int execute_pipe(CMDTREE *);
 
 //execute.c
-extern int execute_command(CMDTREE *, char *, char **);
+extern int execute_external_command(CMDTREE *, char *, char **);
 
 //mysh.c
 extern int run_mysh(void);
