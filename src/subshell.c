@@ -4,7 +4,7 @@
  * Executes the subshell command node - executes the command tree inside a
  * subshell (a duplicate copy of the mysh program).
  *
- * @param  t The command tree, with the root node being of type SUBSHELL.
+ * @param  t the command tree, with the root node being of type N_SUBSHELL.
  * @return   the exit status of the subshell execution
  */
 int execute_subshell(CMDTREE *t)
@@ -15,7 +15,7 @@ int execute_subshell(CMDTREE *t)
   switch (fork())
   {
     case FORK_FAILURE:
-      perror("fork()");
+      MYSH_PERROR("execute_subshell");
       return EXIT_FAILURE;
     case FORK_CHILD:
       {

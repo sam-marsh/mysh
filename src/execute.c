@@ -1,25 +1,18 @@
 #include "mysh.h"
 
-/*
-   CITS2002 Project 2 2015
-   Name(s):             Samuel Marsh, Liam Reeves
-   Student number(s):   21324325, 21329882
-   Date:                TODO
- */
-
 int execute_command(CMDTREE *command, char *path, char **argv)
 {
   switch (fork())
   {
     case FORK_FAILURE:
-      perror("fork()");
+      MYSH_PERROR("execute_command");
       return EXIT_FAILURE;
     case FORK_CHILD:
       set_redirection(command);
       execv(path, argv);
       //failed to execute for whatever reason - try script
       execute_script(path);
-      fprintf(stderr, "%s: command not found...\n", argv[0]);
+      fprintf(stderr, "%s: %s: failed to execute as program or shell script\n", argv0, argv[0]);
       exit(EXIT_FAILURE);
       break;
     default:
@@ -31,7 +24,7 @@ int execute_command(CMDTREE *command, char *path, char **argv)
     }
   }
 
-  fprintf(stderr, "should never get here\n");
+  fprintf(stderr, "%s: internal error: should never get here\n", argv0);
   exit(EXIT_FAILURE);
 }
 
@@ -78,7 +71,7 @@ int direct_command(CMDTREE *t)
         return EXIT_FAILURE;
       }
     }
-    char *file_path = locate_file(c_argv[0]);
+    char *file_path = locate_file(c_argv[0], PATH);
 
     if (file_path == NULL)
     {
@@ -113,7 +106,7 @@ int execute_cmdtree(CMDTREE *t)
 {
   if (t == NULL)
   {
-    fprintf(stderr, "internal error: null command tree\n");
+    fprintf(stderr, "%s: internal error: null command tree\n", argv0);
     return (last_exit_status = EXIT_FAILURE);
   }
 
@@ -141,7 +134,7 @@ int execute_cmdtree(CMDTREE *t)
       last_exit_status = direct_command(t);
       break;
     default:
-      fprintf(stderr, "internal error: unknown node type\n");
+      fprintf(stderr, "%s: internal error: unknown node type\n", argv0);
       last_exit_status = EXIT_FAILURE;
       break;
   }

@@ -1,20 +1,42 @@
 #include "mysh.h"
 
+/**
+ * Terminates the program as per the arguments given in the command tree node.
+ * If the command tree specifies an argument, the program exits with that value,
+ * otherwise the exit status of the most recently executed command is used.
+ *
+ * @param  t the command tree, with root node of type N_COMMAND
+ * @return   nothing on success, EXIT_FAILURE on exit failure...
+ */
 int execute_exit(CMDTREE *t)
 {
   if (t->argc == 1)
   {
+    //no additional arguments provided - exit with status of most recently
+    //executed command
     exit(last_exit_status);
   }
   else
   {
+    //argument specified - convert it to an integer, and exit with that value
     exit(atoi(t->argv[1]));
   }
 
-  fprintf(stderr, "internal error: failed to exit process\n");
+  fprintf(stderr, "%s: failed to exit process\n", argv0);
   return EXIT_FAILURE;
 }
 
+/**
+ * Sets the value of an internal variable to have a new value. The new value is
+ * not validated (i.e. if PATH is set to be something that is not a colon-separated
+ * list of directories, this function will not complain).
+ *
+ * @param  ident one of PATH, HOME, or CDPATH
+ * @param  val   the new value of the internal variable. for PATH and CDPATH,
+ *               this should be a colon-separated list of directories. for HOME
+ *               this should be a directory.
+ * @return       EXIT_SUCCESS on success, EXIT_FAILURE on failure
+ */
 int set_variable(char *ident, char *val)
 {
   struct {
@@ -31,11 +53,17 @@ int set_variable(char *ident, char *val)
   {
     if (strcmp(ident, vars[i].identifier) == 0)
     {
+      //found the appropriate variable - first, free the current value, then
+      //set the new value
+      free(*vars[i].var_ptr);
       *vars[i].var_ptr = strdup(val);
+      check_allocation(*vars[i].var_ptr);
       return EXIT_SUCCESS;
     }
   }
 
+  //if we reach here, there are no internal variables matching the given
+  //identifier
   fprintf(stderr, "unrecognized variable: '%s'\n", ident);
   return EXIT_FAILURE;
 }
@@ -51,20 +79,12 @@ int change_dir(char *name)
 {
   if (name == NULL)
   {
+    //the second argument (following 'cd') is ALWAYS passed to this function. if
+    //this is NULL, it means there was no second argument and we just change to
+    //the home directory.
     if (chdir(HOME) == -1)
     {
-      perror(HOME);
-      return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
-  }
-  else if (strchr(name, '/') != NULL)
-  {
-    //path is absolute - try to change to it
-    if (chdir(name) == -1)
-    {
-      perror(name);
+      MYSH_PERROR(HOME);
       return EXIT_FAILURE;
     }
 
@@ -72,30 +92,22 @@ int change_dir(char *name)
   }
   else
   {
-    char *tmp_path = strdup(CDPATH);
-
-    char *token = strtok(tmp_path, ":");
-    while (token != NULL)
+    //determine full path of the directory and attempt to change to it
+    char *full_path = locate_file(name, CDPATH);
+    if (full_path != NULL)
     {
-      char full_path[MAXPATHLEN];
-      sprintf(full_path, "%s/%s", token, name);
-
-      struct stat s;
-      int err = stat(full_path, &s);
-      if (err != -1 && S_ISDIR(s.st_mode))
+      if (chdir(full_path) == -1)
       {
-        if (chdir(full_path) == -1)
-        {
-          perror(full_path);
-          return EXIT_FAILURE;
-        }
-
-        return EXIT_SUCCESS;
+        MYSH_PERROR(full_path);
+        free(full_path);
+        return EXIT_FAILURE;
       }
-      token = strtok(NULL, ":");
+      free(full_path);
+      return EXIT_SUCCESS;
     }
   }
 
+  //if we get here, no directory could be found using CDPATH
   fprintf(stderr, "%s: No such file or directory\n", name);
   return EXIT_FAILURE;
 }
@@ -103,27 +115,33 @@ int change_dir(char *name)
 /**
  * Locates a file by name and returns the full (absolute) path of that file. The
  * returned string is allocated and must be freed after use.
- *
- * @param  name the relative or absolute path of the file
- * @return      the full path on success (possibly appended to a prefix path in
- *              the PATH variable) or NULL on failure/if not found.
+ * @param  name     the relative or absolute path of the file
+ * @param  prefixes a colon-separated list of directories - the target file is
+ *                  searched for in these directories
+ * @return          the full path on success (possibly appended to a prefix path in
+ *                  the PATH variable) or NULL on failure/if not found.
  */
-char *locate_file(char *name)
+char *locate_file(char *name, char *prefixes)
 {
+  struct stat s;
+
   if (strchr(name, '/') != NULL)
   {
     //path is absolute - just check if the file exists/is readable
-    if (access(name, R_OK) == 0)
+    if (stat(name, &s) != -1)
     {
       //if so, return a duplicate string - returned value always
       //must be freed
-      return strdup(name);
+      char *result = strdup(name);
+      check_allocation(result);
+      return result;
     }
   }
   else
   {
-    //TODO - don't use strtok
-    char *tmp_path = strdup(PATH);
+    char *tmp_path = strdup(prefixes);
+    check_allocation(tmp_path);
+
     //split up the path using colon character
     char *token = strtok(tmp_path, ":");
     while (token != NULL)
@@ -132,11 +150,13 @@ char *locate_file(char *name)
       char full_path[MAXPATHLEN];
       sprintf(full_path, "%s/%s", token, name);
 
-      //check if we can access for reading
-      if (access(full_path, R_OK) == 0)
+      //check if it exists
+      if (stat(full_path, &s) != -1)
       {
         free(tmp_path);
-        return strdup(full_path);
+        char *result = strdup(full_path);
+        check_allocation(full_path);
+        return result;
       }
 
       //move to the next token in the PATH variable
@@ -148,56 +168,4 @@ char *locate_file(char *name)
 
   //didn't find anything - return null
   return NULL;
-}
-
-/**
- * Prints a time in milliseconds to the error stream.
- *
- * @param time the execution time in milliseconds
- */
-void print_execution_time(int time)
-{
-  fprintf(stderr, "%imsec\n", time);
-}
-
-/**
- * Converts a timeval structure to a time in milliseconds.
- *
- * @param  tv a pointer to the timeval structure - this will not be modified
- * @return    the time represented by the timeval, converted to milliseconds
- */
-int timeval_to_millis(struct timeval * const tv)
-{
-  return tv->tv_sec * 1000 + tv->tv_usec / 1000;
-}
-
-/**
- * Executes a command node, timing the execution.
- *
- * @param  command     the command tree structure, pointing to a node of type COMMAND
- * @param  path        the path to the program or script
- * @param  argv        the arguments to be passed to the program
- * @param  exit_status the address of an int variable where the exit status of the
- *                     program will be stored
- * @return             the number of milliseconds taken to execute the command
- */
-int time_command(CMDTREE *command, char *path, char **argv, int *exit_status)
-{
-  int err;
-  struct timeval st_start, st_end;
-
-  if ((err = gettimeofday(&st_start, NULL)) == -1)
-  {
-    perror("gettimeofday()");
-  }
-
-  //execute the command, storing the exit status in the variable passed to the function
-  *exit_status = execute_command(command, path, argv);
-
-  if ((err = gettimeofday(&st_end, NULL)) == -1)
-  {
-    perror("gettimeofday()");
-  }
-
-  return timeval_to_millis(&st_end) - timeval_to_millis(&st_start);
 }

@@ -9,7 +9,7 @@ int execute_pipe(CMDTREE *t)
   {
     case FORK_FAILURE:
       {
-        perror("fork()");
+        MYSH_PERROR("execute_pipe");
         return EXIT_FAILURE;
       }
     case FORK_CHILD:
@@ -19,7 +19,7 @@ int execute_pipe(CMDTREE *t)
         //index 0 (FD_READ) is for reading, index 1 (FD_WRITE) is for writing
         if (pipe(fd) == -1)
         {
-          perror("execute_pipe()");
+          MYSH_PERROR("execute_pipe");
           return EXIT_FAILURE;
         }
 
@@ -27,7 +27,7 @@ int execute_pipe(CMDTREE *t)
         {
           case FORK_FAILURE:
             {
-              perror("fork()");
+              MYSH_PERROR("execute_pipe");
               return EXIT_FAILURE;
             }
           case FORK_CHILD:
@@ -35,7 +35,7 @@ int execute_pipe(CMDTREE *t)
               //set stdout to write to the pipe
               if (dup2(fd[FD_WRITE], fileno(stdout)) == -1)
               {
-                perror("dup2()");
+                MYSH_PERROR("execute_pipe");
                 exit(EXIT_FAILURE);
               }
 
@@ -52,7 +52,7 @@ int execute_pipe(CMDTREE *t)
               //set stdin to read from the pipe
               if (dup2(fd[FD_READ], fileno(stdin)) == -1)
               {
-                perror("dup2()");
+                MYSH_PERROR("execute_pipe");
                 exit(EXIT_FAILURE);
               }
 

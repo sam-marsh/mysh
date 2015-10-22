@@ -17,14 +17,14 @@ void redirect_io_stream(int file_no, char *path, char *mode)
   if (fp == NULL)
   {
     //failed to open - print error and quit
-    perror(path);
+    MYSH_PERROR(path);
     exit(EXIT_FAILURE);
   }
 
   if (dup2(fileno(fp), file_no) == -1)
   {
     //failed to redirect - print error and quit
-    perror("dup2()");
+    MYSH_PERROR("redirect_io_stream");
     exit(EXIT_FAILURE);
   }
 

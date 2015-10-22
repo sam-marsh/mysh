@@ -18,10 +18,17 @@ int execute_background(CMDTREE *t)
       perror("fork()");
       return EXIT_FAILURE;
     case FORK_CHILD:
+    {
       //child process - do the work in parallel
       //ignore result
-      exit(execute_cmdtree(t->left));
+      int result = EXIT_SUCCESS;
+      if (t->left != NULL)
+      {
+        result = execute_cmdtree(t->left);
+      }
+      exit(result);
       break;
+    }
     default:
       //parent process - continue down the right of the tree
       if (t->right != NULL)
@@ -30,6 +37,6 @@ int execute_background(CMDTREE *t)
       }
   }
 
-  fprintf(stderr, "%s: failed to exit child process\n", argv0);
+  fprintf(stderr, "%s: internal error: failed to exit child process\n", argv0);
   return EXIT_FAILURE;
 }

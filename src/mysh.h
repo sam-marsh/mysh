@@ -63,7 +63,7 @@ extern int	execute_cmdtree(CMDTREE *);	// in execute.c
 
 //internalcmd.c
 extern int change_dir(char *);
-extern char *locate_file(char *);
+extern char *locate_file(char *, char *);
 extern void print_execution_time(int);
 extern int timeval_to_millis(struct timeval * const);
 extern int time_command(CMDTREE *, char *, char **, int *);
@@ -128,6 +128,8 @@ extern int last_exit_status;
 //  TWO FUNCTIONS THAT MAY HELP WITH DEBUGGING YOUR CODE.
 //  check_allocation(p) ENSURES THAT A POINTER IS NOT NULL, AND
 //  print_cmdtree(t)  PRINTS THE REQUESTED COMMAND-TREE
+
+#define MYSH_PERROR(str)  fprintf(stderr, "%s: ", argv0); perror((str));
 
 #define	check_allocation(p)	\
 	check_allocation0(p, __FILE__, __func__, __LINE__)
