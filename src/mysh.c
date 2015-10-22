@@ -7,30 +7,29 @@
    Date:                date-of-submission
  */
 
-int run_shell(FILE *in)
-{
-  interactive = (isatty(fileno(in)) && isatty(fileno(stdout)));
-  int exit_status = EXIT_SUCCESS;
+ int run_mysh(void)
+ {
+   interactive = (isatty(fileno(stdin)) && isatty(fileno(stdout)));
 
-  while (!feof(in))
-  {
-    CMDTREE *t = parse_cmdtree(in);
-    
-    if (t != NULL)
-    {
-      exit_status = execute_cmdtree(t);
-      free_cmdtree(t);
-    }
+   int exitstatus;
 
-  }
+   while (!feof(stdin))
+   {
+     CMDTREE	*t = parse_cmdtree(stdin);
+     if (t != NULL)
+     {
+       exitstatus = execute_cmdtree(t);
+       free_cmdtree(t);
+     }
+   }
 
-  if (interactive)
-  {
-    fputc('\n', stdout);
-  }
+   if(interactive)
+   {
+     fputc('\n', stdout);
+   }
 
-  return exit_status;
-}
+   return exitstatus;
+ }
 
 int main(int argc, char *argv[])
 {
@@ -54,27 +53,7 @@ int main(int argc, char *argv[])
     CDPATH	= strdup(p == NULL ? DEFAULT_CDPATH : p);
     check_allocation(CDPATH);
 
-    int exit_status = EXIT_SUCCESS;
+//  DETERMINE IF THIS SHELL IS INTERACTIVE
 
-    if (argc >= 1)
-    {
-      FILE *fp = fopen(argv[0], "r");
-
-      if (fp == NULL)
-      {
-        perror(argv[0]);
-        exit_status = EXIT_FAILURE;
-      }
-      else
-      {
-        exit_status = run_shell(fp);
-        fclose(fp);
-      }
-    }
-    else
-    {
-      exit_status = run_shell(stdin);
-    }
-
-    return exit_status;
+    return run_mysh();
 }

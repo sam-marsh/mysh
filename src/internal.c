@@ -1,5 +1,45 @@
 #include "mysh.h"
 
+int execute_exit(CMDTREE *t)
+{
+  if (t->argc == 1)
+  {
+    exit(last_exit_status);
+  }
+  else
+  {
+    exit(atoi(t->argv[1]));
+  }
+
+  fprintf(stderr, "internal error: failed to exit process\n");
+  return EXIT_FAILURE;
+}
+
+int set_variable(char *ident, char *val)
+{
+  struct {
+    char *identifier;
+    char **var_ptr;
+  } vars[] = {
+    {"PATH", &PATH},
+    {"HOME", &HOME},
+    {"CDPATH", &CDPATH}
+  };
+  int n = sizeof(vars) / sizeof(vars[0]);
+
+  for (int i = 0; i < n; ++i)
+  {
+    if (strcmp(ident, vars[i].identifier) == 0)
+    {
+      *vars[i].var_ptr = strdup(val);
+      return EXIT_SUCCESS;
+    }
+  }
+
+  fprintf(stderr, "unrecognized variable: '%s'\n", ident);
+  return EXIT_FAILURE;
+}
+
 /**
  * Changes the working directory, possibly using the CDPATH variable to locate
  * the referenced directory when a relative path is given.

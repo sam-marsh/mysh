@@ -57,7 +57,6 @@ typedef	struct ct {
     struct ct	*left, *right;	// pointers to left and right subtrees
 } CMDTREE;
 
-
 extern CMDTREE	*parse_cmdtree(FILE *);		// in parser.c
 extern void	free_cmdtree(CMDTREE *);	// in parser.c
 extern int	execute_cmdtree(CMDTREE *);	// in execute.c
@@ -67,20 +66,31 @@ extern int change_dir(char *);
 extern char *locate_file(char *);
 extern void print_execution_time(int);
 extern int timeval_to_millis(struct timeval * const);
-int time_command(CMDTREE *, char *, char **, int *);
+extern int time_command(CMDTREE *, char *, char **, int *);
+extern int set_variable(char *ident, char *val);
+extern int execute_exit(CMDTREE *t);
 
 //branchcmd.c
-int execute_semicolon(CMDTREE *);
-int execute_or(CMDTREE *);
-int execute_and(CMDTREE *);
-int execute_background(CMDTREE *);
-int execute_subshell(CMDTREE *);
+extern int execute_semicolon(CMDTREE *);
+extern int execute_or(CMDTREE *);
+extern int execute_and(CMDTREE *);
+extern int execute_background(CMDTREE *);
+extern int execute_subshell(CMDTREE *);
+
+extern void execute_script(char *);
+
+//TODO
+extern void redirect_io_stream(int, char *, char *);
+extern void set_redirection(CMDTREE *);
 
 //pipecmd.c
-int execute_pipe(CMDTREE *);
+extern int execute_pipe(CMDTREE *);
 
 //execute.c
-int execute_command(CMDTREE *, char *, char **);
+extern int execute_command(CMDTREE *, char *, char **);
+
+//mysh.c
+extern int run_mysh(void);
 
 /* The global variable HOME points to a directory name stored as a
    character string. This directory name is used to indicate two things:
@@ -110,6 +120,7 @@ extern	char	*CDPATH;
 
 extern	char	*argv0;		// The name of the shell, typically mysh
 extern	bool	interactive;	// Boolean indicating if mysh is interactive
+extern int last_exit_status;
 
 
 //  ----------------------------------------------------------------------
