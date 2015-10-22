@@ -24,15 +24,18 @@
 #define COMMENT_CHAR	'#'	// comment character
 #define HOME_CHAR	'~'	// home directory character
 
+#define FORK_FAILURE    -1
+#define FORK_CHILD      0
+
 //  ----------------------------------------------------------------------
 
 //  AN enum IN C99 'GENERATES' A SEQUENCE OF UNIQUE, ASCENDING CONSTANTS
 typedef enum {
 	N_AND = 0,		// as in   cmd1 && cmd2
 	N_BACKGROUND,		// as in   cmd1 &
-	N_OR,			// as in   cmd1 || cmd2	
-	N_SEMICOLON,		// as in   cmd1 ;  cmd2	
-	N_PIPE,			// as in   cmd1 |  cmd2	
+	N_OR,			// as in   cmd1 || cmd2
+	N_SEMICOLON,		// as in   cmd1 ;  cmd2
+	N_PIPE,			// as in   cmd1 |  cmd2
 	N_SUBSHELL,		// as in   ( cmds )
 	N_COMMAND		// an actual md node itself
 } NODETYPE;
@@ -56,6 +59,25 @@ extern CMDTREE	*parse_cmdtree(FILE *);		// in parser.c
 extern void	free_cmdtree(CMDTREE *);	// in parser.c
 extern int	execute_cmdtree(CMDTREE *);	// in execute.c
 
+//internalcmd.c
+extern int change_dir(char *);
+extern char *locate_file(char *);
+extern void print_execution_time(int);
+extern int timeval_to_millis(struct timeval * const);
+int time_command(CMDTREE *, char *, char **, int *);
+
+//branchcmd.c
+int execute_semicolon(CMDTREE *);
+int execute_or(CMDTREE *);
+int execute_and(CMDTREE *);
+int execute_background(CMDTREE *);
+int execute_subshell(CMDTREE *);
+
+//pipecmd.c
+int execute_pipe(CMDTREE *);
+
+//execute.c
+int execute_command(CMDTREE *, char *, char **);
 
 /* The global variable HOME points to a directory name stored as a
    character string. This directory name is used to indicate two things:
@@ -101,4 +123,3 @@ extern	void check_allocation0(void *p, char *file, const char *func, int line);
 	printf("called from %s, %s() line %i:\n", __FILE__,__func__,__LINE__); \
 	print_cmdtree0(t)
 extern	void	print_cmdtree0(CMDTREE *t);
-

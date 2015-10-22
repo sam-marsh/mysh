@@ -2,169 +2,21 @@
 
 /*
    CITS2002 Project 2 2015
-   Name(s):             Samuel Marsh, Liam Reeves	
+   Name(s):             Samuel Marsh, Liam Reeves
    Student number(s):   21324325, 21329882
-   Date:                TODO		        
+   Date:                TODO
  */
 
-#define FD_READ     0
-#define FD_WRITE    1
-
-extern char **environ;  //TODO - do we actually need this?
 int exitstatus;
-
-int execute_and(CMDTREE *t)
-{
-  int exit_status = execute_cmdtree(t->left);
-
-  if (exit_status == EXIT_SUCCESS)
-  {
-    return execute_cmdtree(t->right);
-  }
-
-  return exit_status;
-}
-
-int execute_background(CMDTREE *t)
-{
-  //fork process - throw away return value, don't need it
-  switch (fork())
-  {
-    case -1:
-      //failed to fork
-      perror("fork()");
-      return EXIT_FAILURE;
-    case 0:
-      //child process - do the work in parallel
-      //ignore result
-      exit(execute_cmdtree(t->left));
-      break;
-    default:
-      //parent process - continue down the right of the tree
-      return execute_cmdtree(t->right);
-  }
-}
-
-int execute_or(CMDTREE *t)
-{
-  int exit_status = execute_cmdtree(t->left);
-
-  if (exit_status == EXIT_FAILURE)
-  {
-    return execute_cmdtree(t->right);
-  }
-
-  return exit_status;
-}
-
-int execute_semicolon(CMDTREE *t)
-{
-  execute_cmdtree(t->left);
-  return execute_cmdtree(t->right);
-}
-
-int execute_pipe(CMDTREE *t)
-{
-  int fd[2];
-  pipe(fd);
-
-  switch (fork())
-  {
-    case -1:
-      {
-        perror("fork()");
-        return EXIT_FAILURE;
-      }
-    case 0:
-      {
-        dup2(fd[FD_WRITE], STDOUT_FILENO);
-        close(fd[FD_READ]);
-        close(fd[FD_WRITE]);
-        exit(execute_cmdtree(t->left));
-        break;
-      }
-    default:
-      {
-        switch (fork())
-        {
-          case -1:
-            {
-              perror("fork()");
-              return EXIT_FAILURE;
-            }
-          case 0:
-            {
-              dup2(fd[FD_READ], STDIN_FILENO);
-              close(fd[FD_READ]);
-              close(fd[FD_WRITE]);
-              exit(execute_cmdtree(t->right));
-              break;
-            }
-          default:
-            {
-              int exit_status;
-              wait(&exit_status);
-              return exit_status;
-            }
-        }
-      }
-  }
-}
-
-int execute_subshell(CMDTREE *t)
-{
-  int exit_status;
-
-  switch (fork())
-  {
-    case -1:
-      perror("fork()");
-      return EXIT_FAILURE;
-    case 0:
-      {
-        if (t->infile != NULL)
-        {
-          FILE *fp = fopen(t->infile, "r");
-          if (fp == NULL) 
-          { 
-            //error (TODO) 
-          }
-          dup2(fileno(fp), STDIN_FILENO);
-          fclose(fp);
-        }
-        if (t->outfile != NULL)
-        {
-          FILE *fp = fopen(t->outfile, t->append ? "a" : "w");
-          if (fp == NULL)
-          {
-            //error (TODO)
-          }
-          dup2(fileno(fp), STDOUT_FILENO);
-          fclose(fp);
-        }
-        //TODO - should this be exiting??
-        exit(execute_cmdtree(t->left));
-        break;
-      }
-    default:
-      wait(&exit_status);
-      break;
-  }
-  
-  return exit_status;
-}
 
 int execute_exit(CMDTREE *t)
 {
   if (t->argc == 1)
-  {
     exit(exitstatus);
-  }
   else
-  {
     exit(atoi(t->argv[1]));
-  }
 
+  fprintf(stderr, "failed to exit process\n");
   return EXIT_FAILURE;
 }
 
@@ -193,13 +45,69 @@ int set_variable(char *ident, char *val)
   return EXIT_FAILURE;
 }
 
-int execute_command(CMDTREE *t)
-{
+extern int main(int argc, char *argv[]);
 
-  return -1;
+void run_script(char *path, char **argv)
+{
+  FILE *fp = fopen(path, "r");
+  if (fp == NULL)
+  {
+    fprintf(stderr, "%s: not an executable or script file\n", path);
+    exit(EXIT_FAILURE);
+  }
+
+  dup2(fileno(fp), STDIN_FILENO);
+  fclose(fp);
+  exit(main(1, &argv0));
 }
 
-extern int main(int argc, char *argv[]);
+void set_stream(int file_no, char *path, char *mode)
+{
+  FILE *fp = fopen(path, mode);
+  if (fp == NULL)
+  {
+    perror("set_file_to_stream");
+    exit(EXIT_FAILURE);
+  }
+  dup2(fileno(fp), file_no);
+  fclose(fp);
+}
+
+int execute_command(CMDTREE *command, char *path, char **argv)
+{
+  switch (fork())
+  {
+    case FORK_FAILURE:
+      perror("fork()");
+      return EXIT_FAILURE;
+    case FORK_CHILD:
+      if (command->infile != NULL)
+      {
+        set_stream(STDIN_FILENO, command->infile, "r");
+      }
+      if (command->outfile != NULL)
+      {
+        set_stream(STDOUT_FILENO, command->outfile, command->append ? "a" : "w");
+      }
+      execv(path, argv);
+      //failed to execute - try script
+      run_script(path, argv);
+      fprintf(stderr, "%s: unrecognised command\n", argv[0]);
+      exit(EXIT_FAILURE);
+      break;
+    default:
+    {
+      int exit_status;
+      while (wait(&exit_status) > 0);
+      return exit_status;
+    }
+  }
+
+  fprintf(stderr, "should never get here\n");
+  exit(EXIT_FAILURE);
+}
+
+//TODO change all wait calls to while(wait) loops
 
 // -------------------------------------------------------------------
 
@@ -211,7 +119,7 @@ int execute_cmdtree(CMDTREE *t)
 {
   if (t == NULL)
   {
-    return EXIT_FAILURE;
+    return (exitstatus = EXIT_FAILURE);
   }
 
   switch (t->type)
@@ -238,8 +146,15 @@ int execute_cmdtree(CMDTREE *t)
       {
         if (strcmp(t->argv[0], "set") == 0)
         {
-          //TODO - ensure correct types and numbers of arguments
-          exitstatus = set_variable(t->argv[1], t->argv[2]);
+          if (t->argc >= 3)
+          {
+            exitstatus = set_variable(t->argv[1], t->argv[2]);
+          }
+          else
+          {
+            fprintf(stderr, "Usage: set [PATH|CDPATH|HOME] [newval]\n");
+            exitstatus = EXIT_FAILURE;
+          }
         }
         else if (strcmp(t->argv[0], "exit") == 0)
         {
@@ -247,154 +162,47 @@ int execute_cmdtree(CMDTREE *t)
         }
         else if (strcmp(t->argv[0], "cd") == 0)
         {
-          if (t->argv[1] != NULL)
-          {
-            if (strchr(t->argv[1], '/'))
-            {
-              chdir(t->argv[1]);
-            }
-            else
-            {
-              char *token = strtok(CDPATH, ":");
-              while (token != NULL)
-              {
-                char full_path[MAXPATHLEN];
-                sprintf(full_path, "%s/%s", token, t->argv[1]);
-                struct stat s;
-                int err = stat(full_path, &s);
-                if (err != -1 && S_ISDIR(s.st_mode))
-                {
-                  chdir(full_path);
-                  break;
-                }
-                token = strtok(NULL, ":");
-              }
-            }
-          }
-          else
-          {
-            chdir(HOME);
-          }
+          exitstatus = change_dir(t->argv[1]);
         }
         else
         {
-          bool time = strcmp(t->argv[0], "time") == 0;
-          char **argv = t->argv;
-          int argc = t->argc;
+          char **c_argv = t->argv;
+          bool time = strcmp(c_argv[0], "time") == 0;
           if (time)
           {
-            ++argv;
-            --argc;
+            while (*c_argv != NULL && strcmp(*c_argv, "time") == 0) c_argv++;
+            if (*c_argv == NULL)
+            {
+              fprintf(stderr, "Usage: time [command] [args ...]\n");
+              return (exitstatus = EXIT_FAILURE);
+            }
+          }
+          char *file_path = locate_file(c_argv[0]);
+
+          if (file_path == NULL)
+          {
+            fprintf(stderr, "%s: unrecognised command\n", c_argv[0]);
+            return (exitstatus = EXIT_FAILURE);
           }
 
-          int pid;
-          switch (pid = fork())
+          if (time)
           {
-            case -1:
-              perror("fork()");
-              exitstatus = EXIT_FAILURE;
-              break;
-            case 0:
-              {
-                char *file_path = NULL;
-                if (strchr(argv[0], '/'))
-                {
-                  file_path = strdup(argv[0]);
-                }
-                else 
-                {
-                  char *token = strtok(PATH, ":");
-                  while (token != NULL)
-                  {
-                    char full_path[MAXPATHLEN];
-                    sprintf(full_path, "%s/%s", token, argv[0]);
-                    if (access(full_path, F_OK) != -1)
-                    {
-                      file_path = strdup(full_path);
-                      break;
-                    }
-                    token = strtok(NULL, ":");
-                  }
-                }
-                if (t->infile != NULL)
-                {
-                  FILE *fp = fopen(t->infile, "r");
-                  if (fp == NULL) 
-                  { 
-                    //error (TODO) 
-                  }
-                  dup2(fileno(fp), STDIN_FILENO);
-                  fclose(fp);
-                }
-                if (t->outfile != NULL)
-                {
-                  FILE *fp = fopen(t->outfile, t->append ? "a" : "w");
-                  if (fp == NULL)
-                  {
-                    //error (TODO)
-                  }
-                  dup2(fileno(fp), STDOUT_FILENO);
-                  fclose(fp);
-                }
-                if (execve(file_path, argv, environ) == -1)
-                {
-                  FILE *fp = fopen(file_path, "r");
-                  if (fp == NULL)
-                  {
-                    //error (TODO)
-                  }
-
-                  switch (fork())
-                  {
-                    case -1:
-                      perror("fork()");
-                      exitstatus = EXIT_FAILURE;
-                      break;
-                    case 0:
-                      {
-                        dup2(fileno(fp), STDIN_FILENO);
-                        fclose(fp);
-                        exit(main(1, &argv0));
-                        break;
-                      }
-                    default:
-                      fclose(fp);
-                      wait(&exitstatus);
-                      break;
-                  }
-                }
-                break;
-              }
-            default:
-              if (time)
-              {
-                struct timeval st_start;
-                struct timeval st_end;
-                int start = gettimeofday(&st_start, NULL);
-                if (start == -1)
-                {
-                  //error TODO
-                }
-                wait(&exitstatus);
-                int end = gettimeofday(&st_end, NULL);
-                if (end == -1)
-                {
-                  //error TODO
-                }
-                fprintf(stderr, "%imsec\n", (int) (st_end.tv_usec - st_start.tv_usec) / 1000);
-              }
-              else
-              {
-                wait(&exitstatus);
-              }
-              break;
+            print_execution_time(time_command(t, file_path, c_argv, &exitstatus));
+            free(file_path);
+            return exitstatus;
+          }
+          else
+          {
+            exitstatus = execute_command(t, file_path, c_argv);
+            free(file_path);
+            return exitstatus;
           }
         }
         break;
       }
     default:
       fprintf(stderr, "unknown node type\n");
-      return EXIT_FAILURE;
+      return (exitstatus = EXIT_FAILURE);
   }
   return exitstatus;
 }

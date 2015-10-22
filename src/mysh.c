@@ -7,6 +7,31 @@
    Date:                date-of-submission
  */
 
+int run_shell(FILE *in)
+{
+  interactive = (isatty(fileno(in)) && isatty(fileno(stdout)));
+  int exit_status = EXIT_SUCCESS;
+
+  while (!feof(in))
+  {
+    CMDTREE *t = parse_cmdtree(in);
+    
+    if (t != NULL)
+    {
+      exit_status = execute_cmdtree(t);
+      free_cmdtree(t);
+    }
+
+  }
+
+  if (interactive)
+  {
+    fputc('\n', stdout);
+  }
+
+  return exit_status;
+}
+
 int main(int argc, char *argv[])
 {
 //  REMEMBER THE PROGRAM'S NAME (TO REPORT ANY LATER ERROR MESSAGES)
@@ -29,26 +54,27 @@ int main(int argc, char *argv[])
     CDPATH	= strdup(p == NULL ? DEFAULT_CDPATH : p);
     check_allocation(CDPATH);
 
-//  DETERMINE IF THIS SHELL IS INTERACTIVE
-    interactive		= (isatty(fileno(stdin)) && isatty(fileno(stdout)));
+    int exit_status = EXIT_SUCCESS;
 
-    int exitstatus	= EXIT_SUCCESS;
+    if (argc >= 1)
+    {
+      FILE *fp = fopen(argv[0], "r");
 
-//  READ AND EXECUTE COMMANDS FROM stdin UNTIL IT IS CLOSED (with control-D)
-    while(!feof(stdin)) {
-	CMDTREE	*t = parse_cmdtree(stdin);
-
-	if(t != NULL) {
-
-//  WE COULD DISPLAY THE PARSED COMMAND-TREE, HERE, BY CALLING:
-//	    print_cmdtree(t);
-
-	    exitstatus = execute_cmdtree(t); 
-	    free_cmdtree(t);
-	}
+      if (fp == NULL)
+      {
+        perror(argv[0]);
+        exit_status = EXIT_FAILURE;
+      }
+      else
+      {
+        exit_status = run_shell(fp);
+        fclose(fp);
+      }
     }
-    if(interactive) {
-	fputc('\n', stdout);
+    else
+    {
+      exit_status = run_shell(stdin);
     }
-    return exitstatus;
+
+    return exit_status;
 }
