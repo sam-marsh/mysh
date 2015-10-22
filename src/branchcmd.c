@@ -95,7 +95,8 @@ int execute_subshell(CMDTREE *t)
         break;
       }
     default:
-      wait(&exit_status);
+      while (wait(&exit_status) > 0);
+      exit_status = WEXITSTATUS(exit_status);
       break;
   }
 

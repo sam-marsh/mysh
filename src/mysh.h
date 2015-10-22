@@ -1,3 +1,6 @@
+#ifndef _MYSH_H_
+#define _MYSH_H_
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -123,3 +126,5 @@ extern	void check_allocation0(void *p, char *file, const char *func, int line);
 	printf("called from %s, %s() line %i:\n", __FILE__,__func__,__LINE__); \
 	print_cmdtree0(t)
 extern	void	print_cmdtree0(CMDTREE *t);
+
+#endif

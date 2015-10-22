@@ -61,13 +61,7 @@ int execute_pipe(CMDTREE *t)
               close(fd[FD_WRITE]);
 
               //execute and then exit the child process
-              int result = execute_cmdtree(t->right);
-
-              //wait for child if it's not finished yet
-              //throw away result of left command tree
-              wait(NULL);
-
-              exit(result);
+              exit(execute_cmdtree(t->right));
               break;
             }
         }
@@ -77,6 +71,7 @@ int execute_pipe(CMDTREE *t)
         int exit_status;
         //we are in the original shell - just wait for the children to finish
         while (wait(&exit_status) > 0);
+        exit_status = WEXITSTATUS(exit_status);
         return exit_status;
       }
   }

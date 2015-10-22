@@ -99,6 +99,7 @@ int execute_command(CMDTREE *command, char *path, char **argv)
     {
       int exit_status;
       while (wait(&exit_status) > 0);
+      exit_status = WEXITSTATUS(exit_status);
       return exit_status;
     }
   }
@@ -106,8 +107,6 @@ int execute_command(CMDTREE *command, char *path, char **argv)
   fprintf(stderr, "should never get here\n");
   exit(EXIT_FAILURE);
 }
-
-//TODO change all wait calls to while(wait) loops
 
 // -------------------------------------------------------------------
 
