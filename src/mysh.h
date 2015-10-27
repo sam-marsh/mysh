@@ -1,5 +1,12 @@
-#ifndef _MYSH_H_
-#define _MYSH_H_
+/**
+ * CITS2002 Project 2 2015
+ * Names:           Samuel Marsh,   Liam Reeves
+ * Student numbers: 21324325,       21329882
+ * Date:            30/10/2015
+ */
+
+#ifndef __MYSH_H_
+#define __MYSH_H_
 
 #include <stdio.h>
 #include <string.h>
@@ -57,40 +64,13 @@ typedef	struct ct {
     struct ct	*left, *right;	// pointers to left and right subtrees
 } CMDTREE;
 
-extern CMDTREE	*parse_cmdtree(FILE *);		// in parser.c
-extern void	free_cmdtree(CMDTREE *);	// in parser.c
-extern int	execute_cmdtree(CMDTREE *);	// in execute.c
-
-//internalcmd.c
-extern int change_dir(char *);
-extern char *locate_file(char *, char *);
-extern void print_execution_time(int);
-extern int timeval_to_millis(struct timeval * const);
-extern int time_command(CMDTREE *, char *, char **, int *);
-extern int set_variable(char *ident, char *val);
-extern int execute_exit(CMDTREE *t);
-
-//branchcmd.c
-extern int execute_semicolon(CMDTREE *);
-extern int execute_or(CMDTREE *);
-extern int execute_and(CMDTREE *);
-extern int execute_background(CMDTREE *);
-extern int execute_subshell(CMDTREE *);
-
-extern void execute_script(char *);
-
-//TODO
-extern void redirect_io_stream(int, char *, char *);
-extern void set_redirection(CMDTREE *);
-
-//pipecmd.c
-extern int execute_pipe(CMDTREE *);
+//parser.c
+extern CMDTREE	*parse_cmdtree(FILE *);
+extern void	free_cmdtree(CMDTREE *);
 
 //execute.c
-extern int execute_external_command(CMDTREE *, char *, char **);
-
-//mysh.c
-extern int run_mysh(void);
+extern int  execute_cmdtree(CMDTREE *);
+extern int  execute_generic_command(CMDTREE *, int, char **);
 
 /* The global variable HOME points to a directory name stored as a
    character string. This directory name is used to indicate two things:
@@ -120,21 +100,19 @@ extern	char	*CDPATH;
 
 extern	char	*argv0;		// The name of the shell, typically mysh
 extern	bool	interactive;	// Boolean indicating if mysh is interactive
-extern int last_exit_status;
+extern  int   last_exit_status; // The exit status of the most recently executed command
 
 
 //  ----------------------------------------------------------------------
 
-//  TWO FUNCTIONS THAT MAY HELP WITH DEBUGGING YOUR CODE.
-//  check_allocation(p) ENSURES THAT A POINTER IS NOT NULL, AND
-//  print_cmdtree(t)  PRINTS THE REQUESTED COMMAND-TREE
-
 #define MYSH_PERROR(str)  fprintf(stderr, "%s: ", argv0); perror((str));
 
+//  check_allocation(p) ENSURES THAT A POINTER IS NOT NULL, AND
 #define	check_allocation(p)	\
 	check_allocation0(p, __FILE__, __func__, __LINE__)
 extern	void check_allocation0(void *p, char *file, const char *func, int line);
 
+//  print_cmdtree(t)  PRINTS THE REQUESTED COMMAND-TREE
 #define	print_cmdtree(t)	\
 	printf("called from %s, %s() line %i:\n", __FILE__,__func__,__LINE__); \
 	print_cmdtree0(t)

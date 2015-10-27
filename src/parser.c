@@ -1,3 +1,10 @@
+/**
+ * CITS2002 Project 2 2015
+ * Names:           Samuel Marsh,   Liam Reeves
+ * Student numbers: 21324325,       21329882
+ * Date:            30/10/2015
+ */
+
 #include "mysh.h"
 
 //  Written by Chris.McDonald@uwa.edu.au, October 2015
@@ -93,7 +100,7 @@ static void skip_blanks(void)		//  Skip spaces, tabs and comments
 {
     while(nextch == ' ' || nextch == '\t' || nextch == COMMENT_CHAR) {
 	if(nextch == COMMENT_CHAR)	//  ignore to end-of-line
-	    while (nextch != '\n') 
+	    while (nextch != '\n')
 		get();
 	get();
     }
@@ -122,11 +129,11 @@ static void gettoken(void)
 	token = T_EOF;
 	return;
     }
-    else if(nextch == '<') {		// input redirection 
+    else if(nextch == '<') {		// input redirection
 	token = T_FROMFILE;
 	return;
     }
-    else if(nextch == '>') {		// output redirection 
+    else if(nextch == '>') {		// output redirection
 	get();
 	if(nextch == '>') {
 	    token = T_APPEND;
@@ -201,7 +208,7 @@ static void gettoken(void)
     }
 }
 
-// -------------------- parsing code (at last!) ------------------------ 
+// -------------------- parsing code (at last!) ------------------------
 
 static CMDTREE *new_cmdtree(NODETYPE t)
 {

@@ -1,12 +1,11 @@
-#include "mysh.h"
-
-/*
-   CITS2002 Project 2 2015
-   Name(s):             student-name1 (, student-name2)
-   Student number(s):   student-number-1 (, student-number-2)
-   Date:                date-of-submission
+/**
+ * CITS2002 Project 2 2015
+ * Names:           Samuel Marsh,   Liam Reeves
+ * Student numbers: 21324325,       21329882
+ * Date:            30/10/2015
  */
 
+#include "mysh.h"
 
 //  THREE INTERNAL VARIABLES (SEE mysh.h FOR EXPLANATION)
 char	*HOME, *PATH, *CDPATH;

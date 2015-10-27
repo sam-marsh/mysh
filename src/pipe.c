@@ -1,8 +1,23 @@
+/**
+ * CITS2002 Project 2 2015
+ * Names:           Samuel Marsh,   Liam Reeves
+ * Student numbers: 21324325,       21329882
+ * Date:            30/10/2015
+ */
+
 #include "mysh.h"
 
 #define FD_READ     0
 #define FD_WRITE    1
 
+/**
+ * Executes a command tree node, passing one child's stdout to the other's stdin
+ * (piping the execution).
+ *
+ * @param  t the command tree, with root node of type N_PIPE
+ * @return   the exit status of the right hand side of the tree (the process
+ *           which is receiving stdin from the other side's stdout)
+ */
 int execute_pipe(CMDTREE *t)
 {
   switch (fork())
@@ -60,8 +75,15 @@ int execute_pipe(CMDTREE *t)
               close(fd[FD_READ]);
               close(fd[FD_WRITE]);
 
-              //execute and then exit the child process
-              exit(execute_cmdtree(t->right));
+              //execute our part
+              int exit_status = execute_cmdtree(t->right);
+
+              //wait for the other side to finish if not already done - our side
+              //should always exit last as per what bash does
+              while (wait(NULL) > 0);
+
+              //exit with our exit status
+              exit(exit_status);
               break;
             }
         }

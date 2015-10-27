@@ -1,3 +1,10 @@
+/**
+ * CITS2002 Project 2 2015
+ * Names:           Samuel Marsh,   Liam Reeves
+ * Student numbers: 21324325,       21329882
+ * Date:            30/10/2015
+ */
+
 #include "mysh.h"
 
 /**

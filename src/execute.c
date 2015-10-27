@@ -1,4 +1,27 @@
-#include "mysh.h"
+/**
+ * CITS2002 Project 2 2015
+ * Names:           Samuel Marsh,   Liam Reeves
+ * Student numbers: 21324325,       21329882
+ * Date:            30/10/2015
+ */
+
+#include "execute.h"
+
+/**
+ * Executes the shell script residing at the given file path. Prints an error
+ * message and exits on failure. Called from a child process.
+ *
+ * @param path the path to the shell script
+ */
+void execute_script(char *path)
+{
+  //set stdin to read from the file
+  //the shell should no longer be interactive - calling run_mysh() below will
+  //fix this by re-checking stdin (isatty)
+  redirect_io_stream(fileno(stdin), path, "r");
+  //re-run the program... this will reset all internal variables.
+  exit(run_mysh());
+}
 
 /**
  * Attempts to execute an external program from a file in a child process.
@@ -20,14 +43,31 @@ int execute_external_command(CMDTREE *command, char *path, char **argv)
     case FORK_CHILD:
       //check and enable I/O redirection if required
       set_redirection(command);
-      //attempt to invoke the program
-      execv(path, argv);
-      //failed to execute for whatever reason - try interpreting as script
-      execute_script(path);
-      //if we reach here, it has failed to execute as a program and a script
-      //probably a permissions issue
-      fprintf(stderr, "%s: %s: failed to execute as program or shell script\n", argv0, argv[0]);
-      exit(EXIT_FAILURE);
+
+      if (access(path, X_OK) == 0)
+      {
+        //attempt to invoke the program
+        execv(path, argv);
+
+        //failed to execute - fall through and attempt to interpret shell script
+      }
+
+      if (access(path, R_OK) == 0)
+      {
+        //failed to access for execution for whatever reason - try interpreting as script
+        execute_script(path);
+
+        //should never reach here - will have errored and exited before this
+        //point anyway if something went wrong
+        fprintf(stderr, "%s: %s: Failed to execute shell script\n", argv0, argv[0]);
+        exit(EXIT_FAILURE);
+      }
+      else
+      {
+        //couldn't run, couldn't read
+        fprintf(stderr, "%s: %s: Permission denied\n", argv0, argv[0]);
+        exit(EXIT_FAILURE);
+      }
       break;
     default:
     {
@@ -43,71 +83,34 @@ int execute_external_command(CMDTREE *command, char *path, char **argv)
   exit(EXIT_FAILURE);
 }
 
-int direct_command(CMDTREE *t)
+/**
+ * Executes a command node, which could represent an internal (cd, time) or
+ * external (e.g. /bin/ls) command.
+ * @param  t the command tree, with root node of type N_COMMAND
+ * @return   the exit status of the command
+ */
+int execute_generic_command(CMDTREE *t, int c_argc, char **c_argv)
 {
-  if (strcmp(t->argv[0], "set") == 0)
+  int exit_status;
+  if (execute_internal_command(t, c_argc, c_argv, &exit_status))
   {
-    if (t->argc == 3)
-    {
-      return set_variable(t->argv[1], t->argv[2]);
-    }
-    else
-    {
-      fprintf(stderr, "Usage: set [PATH|CDPATH|HOME] [newval]\n");
-      return EXIT_FAILURE;
-    }
+    return exit_status;
   }
-  else if (strcmp(t->argv[0], "exit") == 0)
-  {
-    return execute_exit(t);
-  }
-  else if (strcmp(t->argv[0], "cd") == 0)
-  {
-    if (t->argc <= 2)
-    {
-      return change_dir(t->argv[1]);
-    }
-    else
-    {
-      fprintf(stderr, "Usage: cd [dir]\n");
-      return EXIT_FAILURE;
-    }
-  }
-  else
-  {
-    char **c_argv = t->argv;
-    bool time = strcmp(c_argv[0], "time") == 0;
-    if (time)
-    {
-      while (*c_argv != NULL && strcmp(*c_argv, "time") == 0) c_argv++;
-      if (*c_argv == NULL)
-      {
-        fprintf(stderr, "Usage: time [command] [args ...]\n");
-        return EXIT_FAILURE;
-      }
-    }
-    char *file_path = locate_file(c_argv[0], PATH);
 
-    if (file_path == NULL)
-    {
-      fprintf(stderr, "%s: unrecognised command\n", c_argv[0]);
-      return EXIT_FAILURE;
-    }
+  //reached here - user didn't request an internal command, so search for an
+  //external one
 
-    if (time)
-    {
-      int result;
-      print_execution_time(time_command(t, file_path, c_argv, &result));
-      free(file_path);
-      return result;
-    }
-    else
-    {
-      int result = execute_external_command(t, file_path, c_argv);
-      free(file_path);
-      return result;
-    }
+  char *file_path = locate_file(c_argv[0], PATH);
+
+  if (file_path == NULL)
+  {
+    fprintf(stderr, "%s: %s: command not found...\n", argv0, c_argv[0]);
+    return EXIT_FAILURE;
   }
+
+  int result = execute_external_command(t, file_path, c_argv);
+  free(file_path);
+  return result;
 }
 
 /**
@@ -146,7 +149,7 @@ int execute_cmdtree(CMDTREE *t)
       last_exit_status = execute_subshell(t);
       break;
     case N_COMMAND:
-      last_exit_status = direct_command(t);
+      last_exit_status = execute_generic_command(t, t->argc, t->argv);
       break;
     default:
       fprintf(stderr, "%s: internal error: unknown node type\n", argv0);
