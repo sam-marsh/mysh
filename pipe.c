@@ -20,6 +20,15 @@
  */
 int execute_pipe(CMDTREE *t)
 {
+  int fd[2];
+
+  //index 0 (FD_READ) is for reading, index 1 (FD_WRITE) is for writing
+  if (pipe(fd) == -1)
+  {
+    MYSH_PERROR("execute_pipe");
+    return EXIT_FAILURE;
+  }
+
   switch (fork())
   {
     case FORK_FAILURE:
@@ -29,15 +38,27 @@ int execute_pipe(CMDTREE *t)
       }
     case FORK_CHILD:
       {
-        int fd[2];
-
-        //index 0 (FD_READ) is for reading, index 1 (FD_WRITE) is for writing
-        if (pipe(fd) == -1)
+        //set stdout to write to the pipe
+        if (dup2(fd[FD_WRITE], fileno(stdout)) == -1)
         {
           MYSH_PERROR("execute_pipe");
-          return EXIT_FAILURE;
+          exit(EXIT_FAILURE);
         }
 
+        //close both piped files - we have stdout now which is all we need
+        close(fd[FD_READ]);
+        close(fd[FD_WRITE]);
+
+        //not really important what status we exit with, this value is
+        //ignored anyway
+        exit(execute_cmdtree(t->left));
+        break;
+      }
+    default:
+      {
+        //after much debugging, should fork again in parent... was forking again
+        //in child, but led to weird race condition (?) where WEXITSTATUS in
+        //execute_external_command would return exit status of wrong command
         switch (fork())
         {
           case FORK_FAILURE:
@@ -46,23 +67,6 @@ int execute_pipe(CMDTREE *t)
               return EXIT_FAILURE;
             }
           case FORK_CHILD:
-            {
-              //set stdout to write to the pipe
-              if (dup2(fd[FD_WRITE], fileno(stdout)) == -1)
-              {
-                MYSH_PERROR("execute_pipe");
-                exit(EXIT_FAILURE);
-              }
-
-              //close both piped files - we have stdout now which is all we need
-              close(fd[FD_READ]);
-              close(fd[FD_WRITE]);
-
-              //execute and then exit the child process
-              exit(execute_cmdtree(t->left));
-              break;
-            }
-          default:
             {
               //set stdin to read from the pipe
               if (dup2(fd[FD_READ], fileno(stdin)) == -1)
@@ -75,26 +79,22 @@ int execute_pipe(CMDTREE *t)
               close(fd[FD_READ]);
               close(fd[FD_WRITE]);
 
-              //execute our part
-              int exit_status = execute_cmdtree(t->right);
-
-              //wait for the other side to finish if not already done - our side
-              //should always exit last as per what bash does
-              while (wait(NULL) > 0);
-
-              //exit with our exit status
-              exit(exit_status);
+              exit(execute_cmdtree(t->right));
               break;
             }
+          default:
+            {
+              //close both in parent as well
+              close(fd[FD_READ]);
+              close(fd[FD_WRITE]);
+
+              int exit_status;
+              //we are in the original shell - just wait for the children to finish
+              while (wait(&exit_status) > 0);
+              exit_status = WEXITSTATUS(exit_status);
+              return exit_status;
+            }
         }
-      }
-    default:
-      {
-        int exit_status;
-        //we are in the original shell - just wait for the children to finish
-        while (wait(&exit_status) > 0);
-        exit_status = WEXITSTATUS(exit_status);
-        return exit_status;
       }
   }
 

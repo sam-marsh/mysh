@@ -34,14 +34,12 @@ int run_mysh(void)
   //determine if this shell is interactive
   interactive = (isatty(fileno(stdin)) && isatty(fileno(stdout)));
 
-  int exitstatus;
-
   while (!feof(stdin))
   {
     CMDTREE	*t = parse_cmdtree(stdin);
     if (t != NULL)
     {
-      exitstatus = execute_cmdtree(t);
+      last_exit_status = execute_cmdtree(t);
       free_cmdtree(t);
     }
   }
@@ -51,7 +49,7 @@ int run_mysh(void)
     fputc('\n', stdout);
   }
 
-  return exitstatus;
+  return last_exit_status;
 }
 
 int main(int argc, char *argv[])
