@@ -219,13 +219,8 @@ int timeval_to_millis(struct timeval * const tv)
  */
 int command_time(CMDTREE *t, int argc, char *argv[])
 {
-  //as per sh, skip past multiple 'time' arguments - i.e. "time time time ls"
-  //should have the same output as "time ls"
-  while (argc > 0 && strcmp(argv[0], "time") == 0)
-  {
-    --argc;
-    ++argv;
-  }
+  --argc;
+  ++argv;
 
   if (argc < 1)
   {
