@@ -6,7 +6,6 @@
  */
 
 #include "mysh.h"
-#include "fileutil.h"
 
 /**
  * Forward declarations so that the structure array variable below can be
@@ -191,7 +190,15 @@ int command_exit(CMDTREE *t, int argc, char *argv[])
   else
   {
     //argument specified - convert it to an integer, and exit with that value
-    exit(atoi(argv[1]));
+    if (isdigit(argv[1][0]))
+    {
+        exit(atoi(argv[1]));
+    }
+    else
+    {
+        fprintf(stderr, "%s: %s: %s: numeric argument required\n", argv0, argv[0], argv[1]);
+        exit(EXIT_FAILURE);
+    }
   }
 
   fprintf(stderr, "%s: failed to exit process\n", argv0);

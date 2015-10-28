@@ -6,7 +6,6 @@
  */
 
 #include "mysh.h"
-#include "fileutil.h"
 
 /**
  * Executes the subshell command node - executes the command tree inside a

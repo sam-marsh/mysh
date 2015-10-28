@@ -1,23 +1,25 @@
-TARGET		=	mysh
+# CITS2002 Project 2 2015
+# Names:						Samuel Marsh,	Liam Reeves
+# Student numbers:	21324325,			21329882
+# Date:							30/10/2015
 
-CC       	=	cc
-CFLAGS		=	-std=c99 -Wall -Werror -pedantic
+PROJECT		=	mysh
 
-SRC_DIR		=	src
-OBJ_DIR		=	obj
-BIN_DIR		=	bin
+# at the moment, a single header file is used in all source files
+HEADERS		=	$(PROJECT).h
 
-SOURCES		= 	$(wildcard $(SRC_DIR)/*.c)
-HEADERS		= 	$(wildcard $(SRC_DIR)/*.h)
-OBJECTS		= 	$(SOURCES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+# dynamically generate a list of the required object files
+SOURCES		=	$(wildcard *.c)
+OBJECTS		=	$(SOURCES:%.c=%.o)
 
-$(BIN_DIR)/$(TARGET) : $(OBJECTS)
-	@mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
+C99			=	cc -std=c99
+CFLAGS		=	-Wall -pedantic -Werror
 
-$(OBJECTS) : $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
-	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+$(PROJECT) : $(OBJECTS)
+	$(C99) $(CFLAGS) -o $(PROJECT) $(OBJECTS)
 
-clean :
-	rm -f $(OBJECTS) $(BIN_DIR)/$(TARGET)
+%.o : %.c $(HEADERS)
+	$(C99) $(CFLAGS) -c $<
+
+clean:
+	rm -f $(PROJECT) $(OBJECTS)

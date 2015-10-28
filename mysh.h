@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <sys/wait.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -71,6 +72,25 @@ extern void	free_cmdtree(CMDTREE *);
 //execute.c
 extern int  execute_cmdtree(CMDTREE *);
 extern int  execute_generic_command(CMDTREE *, int, char **);
+
+//fileutil.c
+extern char *locate_file(char *, char *);
+extern void set_redirection(CMDTREE *);
+extern void redirect_io_stream(int, char *, char *);
+
+//external functions called in execute.c
+extern int execute_and(CMDTREE *);
+extern int execute_background(CMDTREE *);
+extern int execute_or(CMDTREE *);
+extern int execute_semicolon(CMDTREE *);
+extern int execute_pipe(CMDTREE *);
+extern int execute_subshell(CMDTREE *);
+
+//internal.c
+extern bool execute_internal_command(CMDTREE *, int, char **, int *);
+
+//mysh.c
+extern int run_mysh(void);
 
 /* The global variable HOME points to a directory name stored as a
    character string. This directory name is used to indicate two things:

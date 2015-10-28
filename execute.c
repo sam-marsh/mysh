@@ -5,7 +5,7 @@
  * Date:            30/10/2015
  */
 
-#include "execute.h"
+#include "mysh.h"
 
 /**
  * Executes the shell script residing at the given file path. Prints an error

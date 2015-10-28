@@ -5,7 +5,7 @@
  * Date:            30/10/2015
  */
 
-#include "fileutil.h"
+#include "mysh.h"
 
 /**
  * Locates a file by name and returns the full (absolute) path of that file. The
