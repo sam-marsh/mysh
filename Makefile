@@ -12,15 +12,16 @@ HEADERS			=	$(PROJECT).h
 SOURCES			=	$(wildcard *.c)
 OBJECTS			=	$(SOURCES:%.c=%.o)
 
-COMPILER		=	cc
-CFLAGS			=	-std=c99 -Wall -pedantic -Werror
+COMPILER		=	cc -std=c99
+CFLAGS			=	-Wall -pedantic -Werror
 
 $(PROJECT) : $(OBJECTS)
 	$(COMPILER) $(CFLAGS) -o $(PROJECT) $(OBJECTS)
 
-# note: also added %.h to support recompilation of a file if the header of the
-# same name changes - e.g. execute.h changes -> update execute.o
-%.o : %.c %.h $(HEADERS)
+# note: also added $(wildcard %.h) to support recompilation of a file if the
+# header of the same name exists and has changed - e.g. execute.h
+# changes -> update execute.o
+%.o : %.c $(wildcard %.h) $(HEADERS)
 	$(COMPILER) $(CFLAGS) -c $<
 
 clean:

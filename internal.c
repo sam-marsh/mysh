@@ -165,7 +165,7 @@ int command_set(CMDTREE *t, int argc, char *argv[])
   }
   else
   {
-    fprintf(stderr, "Usage: set [PATH|CDPATH|HOME] [newval]\n");
+    fprintf(stderr, "%s: %s: usage: set [PATH|CDPATH|HOME] [newval]\n", argv0, argv[0]);
     return EXIT_FAILURE;
   }
 }
@@ -189,7 +189,7 @@ int command_exit(CMDTREE *t, int argc, char *argv[])
   }
   else
   {
-    //argument specified - convert it to an integer, and exit with that value
+    //argument specified - exit with that value
     if (isdigit(argv[1][0]))
     {
         exit(atoi(argv[1]));
@@ -243,7 +243,7 @@ int command_time(CMDTREE *t, int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  //execute the command, storing the exit status in the variable passed to the function
+  //execute the command, record exit status
   int exit_status = execute_generic_command(t, argc, argv);
 
   if (gettimeofday(&st_end, NULL) == -1)
