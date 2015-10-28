@@ -3,23 +3,25 @@
 # Student numbers:	21324325,			21329882
 # Date:							30/10/2015
 
-PROJECT		=	mysh
+PROJECT			=	mysh
 
-# at the moment, a single header file is used in all source files
-HEADERS		=	$(PROJECT).h
+# everything depends on mysh.h
+HEADERS			=	$(PROJECT).h
 
 # dynamically generate a list of the required object files
-SOURCES		=	$(wildcard *.c)
-OBJECTS		=	$(SOURCES:%.c=%.o)
+SOURCES			=	$(wildcard *.c)
+OBJECTS			=	$(SOURCES:%.c=%.o)
 
-C99			=	cc -std=c99
-CFLAGS		=	-Wall -pedantic -Werror
+COMPILER		=	cc
+CFLAGS			=	-std=c99 -Wall -pedantic -Werror
 
 $(PROJECT) : $(OBJECTS)
-	$(C99) $(CFLAGS) -o $(PROJECT) $(OBJECTS)
+	$(COMPILER) $(CFLAGS) -o $(PROJECT) $(OBJECTS)
 
-%.o : %.c $(HEADERS)
-	$(C99) $(CFLAGS) -c $<
+# note: also added %.h to support recompilation of a file if the header of the
+# same name changes - e.g. execute.h changes -> update execute.o
+%.o : %.c %.h $(HEADERS)
+	$(COMPILER) $(CFLAGS) -c $<
 
 clean:
 	rm -f $(PROJECT) $(OBJECTS)
