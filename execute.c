@@ -49,11 +49,6 @@ int execute_external_command(CMDTREE *command, char *path, char **argv)
         //attempt to invoke the program
         execv(path, argv);
 
-        //failed to execute - fall through and attempt to interpret shell script
-      }
-
-      if (access(path, R_OK) == 0)
-      {
         //failed to access for execution for whatever reason - try interpreting as script
         execute_script(path);
 
