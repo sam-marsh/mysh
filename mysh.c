@@ -31,6 +31,8 @@ int run_mysh(void)
   CDPATH	= strdup(p == NULL ? DEFAULT_CDPATH : p);
   check_allocation(CDPATH);
 
+  last_exit_status = EXIT_SUCCESS;
+  
   //determine if this shell is interactive
   interactive = (isatty(fileno(stdin)) && isatty(fileno(stdout)));
 
