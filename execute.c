@@ -35,7 +35,8 @@ void execute_script(char *path)
  */
 int execute_external_command(CMDTREE *command, char *path, char **argv)
 {
-  switch (fork())
+  int child_pid;
+  switch (child_pid = fork())
   {
     case FORK_FAILURE:
       MYSH_PERROR("execute_command");
@@ -68,7 +69,7 @@ int execute_external_command(CMDTREE *command, char *path, char **argv)
     {
       //in the parent process, just wait for the child to finish execution
       int exit_status;
-      while (wait(&exit_status) > 0);
+      waitpid(child_pid, &exit_status, 0);
       exit_status = WEXITSTATUS(exit_status);
       return exit_status;
     }
