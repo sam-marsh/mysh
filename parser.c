@@ -1,4 +1,8 @@
-
+/**
+ * Author:          Chris McDonald
+ * Date:            30/10/2015
+ */
+ 
 #include "mysh.h"
 
 //  Written by Chris.McDonald@uwa.edu.au, October 2015
