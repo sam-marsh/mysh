@@ -7,20 +7,6 @@
 
 //  Written by Chris.McDonald@uwa.edu.au, October 2015
 
-/*  This file provides the most complicated part of the shell -
-    its command parser.  This file provides two functions (at bottom of file):
-
-	    CMDTREE	*parse_cmdtree(FILE *fp);
-    and	    void	free_cmdtree(CMDTREE *t);
-
-    These two functions need only be called from within the main() function.
-    All other functions are variables are declared as 'static' so that they
-    are not visible outside of this file.
-
-    Remember, there is no need for you to understand this code;
-    however, it is provided here for your edification and didaction.
- */
-
 #include <signal.h>
 #include <setjmp.h>
 
