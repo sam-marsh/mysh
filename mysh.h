@@ -1,5 +1,5 @@
 /**
- * Author:          Samuel Marsh
+ * Author:          Samuel Marsh, Chris McDonald
  * Date:            30/10/2015
  */ 
 
