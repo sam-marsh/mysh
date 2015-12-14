@@ -1,2 +1,3 @@
 cal
+
 ls -a && date
