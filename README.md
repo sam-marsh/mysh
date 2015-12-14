@@ -1,2 +1,2 @@
-# CITS2002-Project-2
-A shell implementation in C.
+# mysh
+A very basic shell implementation in C.
